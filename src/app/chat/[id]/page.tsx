@@ -10,6 +10,8 @@ export default function ChatPage() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
+  type Message = { role: "user" | "assistant"; content: string };
+  const [messages, setMessages] = useState<Message[]>([]);
 
   useEffect(() => {
     const fetchPdf = async () => {
@@ -23,6 +25,8 @@ export default function ChatPage() {
 
   const askAI = async () => {
     if (!question.trim()) return;
+    // push user's question into messages for chat history
+    setMessages((p) => [...p, { role: "user", content: question }]);
     setLoading(true);
     const res = await fetch("/api/ask-ai", {
       method: "POST",
@@ -31,6 +35,8 @@ export default function ChatPage() {
     });
     const data = await res.json();
     setAnswer(data.answer);
+    // push assistant response into messages
+    setMessages((p) => [...p, { role: "assistant", content: data.answer }]);
     setLoading(false);
   };
 
@@ -42,6 +48,20 @@ export default function ChatPage() {
       <iframe src={pdf.fileUrl} className="w-full h-[500px] border rounded-xl" />
 
       <div className="mt-6">
+        <div className="space-y-4 mt-6">
+          {messages.map((m, i) => (
+            <div
+              key={i}
+              className={`p-3 rounded-lg max-w-[75%] ${
+                m.role === "user"
+                  ? "ml-auto bg-blue-600 text-white"
+                  : "mr-auto bg-gray-200 dark:bg-gray-700 dark:text-gray-100"
+              }`}
+            >
+              {m.content}
+            </div>
+          ))}
+        </div>
         <textarea
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
@@ -55,6 +75,28 @@ export default function ChatPage() {
           className="mt-3 px-5 py-2 rounded-lg bg-linear-to-r from-blue-600 to-purple-600 text-white hover:scale-105 transition-all"
         >
           {loading ? "Thinking..." : "Ask AI 💬"}
+        </button>
+
+        <button
+          onClick={async () => {
+            try {
+              const res = await fetch("/api/ask-ai", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  pdfId: id,
+                  question: "Summarize this entire PDF in detail.",
+                }),
+              });
+              const data = await res.json();
+              setAnswer(data.answer);
+            } catch (e) {
+              console.error("Summarize request failed", e);
+            }
+          }}
+          className="ml-3 mt-3 px-3 py-1.5 bg-linear-to-r from-blue-600 to-indigo-500 text-white rounded-lg shadow hover:scale-[1.02] transition"
+        >
+          📘 Summarize PDF
         </button>
 
         {answer && (
