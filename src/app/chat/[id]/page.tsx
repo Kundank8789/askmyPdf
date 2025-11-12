@@ -1,4 +1,6 @@
 "use client";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
