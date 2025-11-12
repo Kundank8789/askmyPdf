@@ -5,7 +5,8 @@ import connectDB from "@/lib/mongodb";
 import PDF from "@/models/pdfModel";
 import fs from "fs";
 import path from "path";
-import pdf from "pdf-parse"; // ✅ works only after installing pdf-parse@1.1.1
+// ✅ Fix: dynamically import the CommonJS build of pdf-parse
+const pdf = require("pdf-parse"); // <-- PASTE THIS HERE
 
 export async function POST(req: Request) {
   try {
