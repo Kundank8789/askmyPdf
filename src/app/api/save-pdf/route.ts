@@ -1,83 +1,99 @@
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { pinecone } from "@/lib/pinecone";
+import { auth } from "@clerk/nextjs/server";
 import connectDB from "@/lib/mongodb";
 import PDF from "@/models/pdfModel";
-import fs from "fs";
-import path from "path";
-// ✅ Fix: dynamically import the CommonJS build of pdf-parse
-const pdf = require("pdf-parse"); // <-- PASTE THIS HERE
+import { pinecone } from "@/lib/pinecone";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import axios from "axios";
+
+// Dynamic import pdf-parse
+let pdfParse: any;
+(async () => {
+  const mod = await import("pdf-parse/lib/pdf-parse.js");
+  pdfParse = mod.default || mod;
+})();
 
 export async function POST(req: Request) {
   try {
-    console.log("✅ save-pdf route triggered");
+    console.log("✅ /api/save-pdf triggered");
+
+    // 🔥 Correct way to get Clerk user inside an API route
+    const { userId } = auth();
+
+    console.log("👤 Clerk userId:", userId);
+
+    if (!userId) {
+      console.error("❌ Unauthorized: No Clerk user found");
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Get PDF info from body
+    const { fileUrl, fileName } = await req.json();
+    if (!fileUrl || !fileName) {
+      return NextResponse.json({ error: "Missing PDF data" }, { status: 400 });
+    }
 
     await connectDB();
+    console.log("✅ MongoDB connected");
 
-    const { fileUrl, fileName, userId } = await req.json();
+    // Download PDF
+    const response = await axios.get(fileUrl, { responseType: "arraybuffer" });
+    const pdfBuffer = Buffer.from(response.data, "binary");
 
-    if (!fileUrl) throw new Error("Missing fileUrl");
+    // Extract text
+    const data = await pdfParse(pdfBuffer);
+    const text = data.text?.trim() || "";
 
-    // ✅ 1. Download and save the uploaded PDF
-    const tempDir = path.join(process.cwd(), "temp");
-    if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
-
-    const filePath = path.join(tempDir, `${Date.now()}_${fileName}`);
-    console.log("⬇️ Downloading PDF from:", fileUrl);
-
-    const response = await fetch(fileUrl);
-    if (!response.ok) throw new Error(`Failed to download PDF: ${response.statusText}`);
-
-    const buffer = Buffer.from(await response.arrayBuffer());
-    fs.writeFileSync(filePath, buffer);
-    console.log("✅ File saved locally at:", filePath);
-
-    // ✅ 2. Extract text from PDF
-    console.log("📖 Extracting text from PDF...");
-    const parsed = await pdf(fs.readFileSync(filePath));
-    const text = parsed.text.trim();
-    if (!text) throw new Error("No text extracted from PDF");
-
-    // ✅ 3. Chunking text
-    const chunkSize = 1000;
-    const chunks = text.match(new RegExp(`.{1,${chunkSize}}`, "g")) || [];
-    console.log(`🧩 Split into ${chunks.length} chunks`);
-
-    // ✅ 4. Create embeddings
-    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
-    const embedModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
-
-    const embeddings = [];
-    for (const chunk of chunks) {
-      const res = await embedModel.embedContent(chunk);
-      embeddings.push(res.embedding.values);
+    if (!text || text.length < 50) {
+      return NextResponse.json(
+        { error: "No readable text in PDF" },
+        { status: 400 }
+      );
     }
-    console.log("✨ Generated all embeddings");
 
-    // ✅ 5. Store embeddings in Pinecone
-    const index = pinecone.Index(process.env.PINECONE_INDEX!);
-    await index.upsert({
-      upsertRequest: {
-        vectors: embeddings.map((values, i) => ({
-          id: `${fileName}-${i}`,
-          values,
-          metadata: { text: chunks[i], fileName },
-        })),
-      },
+    console.log("📄 Extracted text length:", text.length);
+
+    // Generate embeddings
+    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
+    const embedModel = genAI.getGenerativeModel({
+      model: "text-embedding-004",
     });
-    console.log("📤 Uploaded embeddings to Pinecone");
 
-    // ✅ 6. Save metadata in MongoDB
-    await PDF.create({ fileName, fileUrl, userId });
-    console.log("✅ PDF saved in MongoDB");
+    const embeddingResponse = await embedModel.embedContent(text);
+    const embedding = embeddingResponse.embedding.values;
 
-    // ✅ 7. Clean up
-    fs.unlinkSync(filePath);
-    console.log("🧹 Temporary file deleted");
+    console.log("🧠 Embedding generated");
 
-    return NextResponse.json({ success: true, message: "PDF processed successfully" });
-  } catch (err) {
-    console.error("❌ save-pdf route error:", err);
-    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
+    // Store in Pinecone
+    const index = pinecone.Index(process.env.PINECONE_INDEX!);
+    await index.upsert([
+      {
+        id: `${fileName}-${Date.now()}`,
+        values: embedding,
+        metadata: { text, fileName, userId },
+      },
+    ]);
+
+    console.log("📦 Saved embedding in Pinecone");
+
+    // Save PDF in MongoDB
+    const newPdf = await PDF.create({
+      userId,
+      fileName,
+      fileUrl,
+    });
+
+    console.log("✅ PDF saved to DB", newPdf._id);
+
+    return NextResponse.json({
+      message: "PDF processed & saved",
+      pdfId: newPdf._id,
+    });
+  } catch (error) {
+    console.error("❌ Error in /api/save-pdf:", error);
+    return NextResponse.json(
+      { error: "Failed to process PDF" },
+      { status: 500 }
+    );
   }
 }
