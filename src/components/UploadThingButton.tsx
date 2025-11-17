@@ -29,25 +29,32 @@ export function UploadThingButton() {
             setIsProcessing(true);
             setStatusMessage("💾 Saving PDF to database...");
 
+            const fileUrl = res[0].ufsUrl; // ✅ Correct UploadThing final URL
+            const fileName = res[0].name;
+
             // Step 1 — Save uploaded PDF info to MongoDB
             const saveRes = await fetch("/api/save-pdf", {
               method: "POST",
+              credentials: "include", // ✅ Send Clerk cookies
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                fileName: res[0].name,
-                fileUrl: res[0].ufsUrl,
-              }),
+              body: JSON.stringify({ fileUrl, fileName }),
             });
+
+            if (!saveRes.ok) {
+              const errText = await saveRes.text();
+              throw new Error("Save failed: " + errText);
+            }
 
             const savedPdf = await saveRes.json();
             console.log("✅ Saved PDF:", savedPdf);
 
-            // Step 2 — Process and embed the PDF into Pinecone
+            // Step 2 — Trigger optional PDF processing route
             setStatusMessage("🧠 Extracting and embedding PDF content...");
+
             const processRes = await fetch("/api/process-pdf", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ pdfId: savedPdf._id }),
+              body: JSON.stringify({ pdfId: savedPdf.pdfId }),
             });
 
             const processResult = await processRes.json();
@@ -55,6 +62,7 @@ export function UploadThingButton() {
 
             setStatusMessage("🎉 Done! PDF is ready for chat.");
             setTimeout(() => setIsProcessing(false), 2000);
+
             alert("✅ PDF uploaded and processed successfully!");
           } catch (err) {
             console.error("❌ Error uploading or processing PDF:", err);

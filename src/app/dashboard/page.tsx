@@ -1,5 +1,8 @@
 "use client";
 
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
+
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { UploadThingButton } from "@/components/UploadThingButton";
