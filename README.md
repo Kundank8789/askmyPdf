@@ -1,36 +1,212 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📚 AskMyPDF
 
-## Getting Started
+An AI-powered PDF Question Answering application built with Next.js that allows users to upload PDF documents and interact with them using natural language. The application extracts content from PDFs and uses AI to provide accurate answers based on the uploaded document.
 
-First, run the development server:
+## 🚀 Live Demo
+
+Add your deployed application link here:
+
+```text
+https://your-app.vercel.app
+```
+
+## ✨ Features
+
+* 📄 Upload PDF documents
+* 🤖 AI-powered question answering
+* 💬 Chat with your PDF in natural language
+* 🔍 Context-aware responses
+* ⚡ Fast document processing
+* 📱 Fully responsive design
+* 🎨 Modern and intuitive UI
+* 🔒 Secure file handling
+* 📚 Support for multiple document queries
+
+## 🛠️ Tech Stack
+
+### Frontend
+
+* Next.js
+* React
+* TypeScript
+* Tailwind CSS
+
+### Backend
+
+* Next.js API Routes
+* Node.js
+
+### AI & Data Processing
+
+* OpenAI API / Gemini API
+* LangChain
+* Vector Database (Pinecone/ChromaDB)
+* PDF Parsing Libraries
+
+## 📂 Project Structure
+
+```bash
+askmyPdf/
+│
+├── app/
+├── components/
+├── lib/
+├── actions/
+├── hooks/
+├── public/
+├── types/
+│
+├── package.json
+├── next.config.ts
+├── tsconfig.json
+└── README.md
+```
+
+## ⚙️ Installation
+
+### Clone Repository
+
+```bash
+git clone https://github.com/Kundank8789/askmyPdf.git
+```
+
+### Navigate to Project
+
+```bash
+cd askmyPdf
+```
+
+### Install Dependencies
+
+```bash
+npm install
+```
+
+### Configure Environment Variables
+
+Create a `.env.local` file:
+
+```env
+OPENAI_API_KEY=your_api_key
+DATABASE_URL=your_database_url
+```
+
+## ▶️ Running the Application
+
+Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```text
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🎯 How It Works
 
-## Learn More
+1. Upload a PDF document.
+2. The application extracts and processes the content.
+3. Text is converted into searchable embeddings.
+4. Ask questions related to the document.
+5. Receive AI-generated answers based on the PDF content.
 
-To learn more about Next.js, take a look at the following resources:
+## 📸 Screenshots
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Upload PDF
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```md
+![Upload PDF](./public/screenshots/upload.png)
+```
 
-## Deploy on Vercel
+### Chat Interface
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```md
+![Chat Interface](./public/screenshots/chat.png)
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### AI Response
+
+```md
+![AI Response](./public/screenshots/response.png)
+```
+
+## 🌟 Future Enhancements
+
+* Multiple PDF uploads
+* PDF summarization
+* Citation and source highlighting
+* Export chat history
+* User authentication
+* Team collaboration
+* Support for Word and PowerPoint documents
+
+## 🔧 Available Scripts
+
+```bash
+npm run dev
+```
+
+Runs the development server.
+
+```bash
+npm run build
+```
+
+Creates a production build.
+
+```bash
+npm run start
+```
+
+Runs the production server.
+
+```bash
+npm run lint
+```
+
+Checks code quality and linting issues.
+
+## 🤝 Contributing
+
+Contributions are welcome.
+
+1. Fork the repository
+2. Create a feature branch
+
+```bash
+git checkout -b feature/new-feature
+```
+
+3. Commit your changes
+
+```bash
+git commit -m "Add new feature"
+```
+
+4. Push to GitHub
+
+```bash
+git push origin feature/new-feature
+```
+
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+## 👨‍💻 Author
+
+Kulbhushan Kumar
+
+GitHub: https://github.com/Kundank8789
+
+LinkedIn: Add Your LinkedIn Profile
+
+---
+
+⭐ If you found this project useful, please give it a star on GitHub.
+
